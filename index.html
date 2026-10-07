@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Durga Puja Songs | Pujo, Mahalaya &amp; Navratri | পুজোর গান</title>
+  <meta name="description" content="Free Durga Puja songs online: classic Bengali Pujo songs, Mahalaya, Agomoni and dhak, new Puja hits and Navratri garba songs. পুজোর গান, মহালয়া.">
+  <meta name="keywords" content="Durga Puja songs, Durga Pujo songs, Puja songs, Pujo songs, পুজোর গান, দুর্গা পুজোর গান, Bengali Puja songs, Agomoni songs, Mahalaya, Mahalaya songs, Mahishasuramardini, মহালয়া, Navratri songs, Navratri garba songs, Dandiya songs, dhak, Durga Puja playlist">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#1a0d08">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Durga Puja Songs">
+  <meta property="og:title" content="Durga Puja, Mahalaya &amp; Navratri Songs · পুজোর গান">
+  <meta property="og:description" content="Classic Bengali Pujo songs, Mahalaya, new Puja hits and Navratri songs, free in your browser.">
+  <meta property="og:url" content="https://durgapujasongs.com/">
+  <meta property="og:image" content="https://durgapujasongs.com/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="পুজোর গান · Durga Puja Songs">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="canonical" href="https://durgapujasongs.com/">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Durga Puja Songs",
+    "alternateName": ["Pujo Songs", "Durga Pujo Songs", "Puja Songs", "Mahalaya Songs", "Navratri Songs", "পুজোর গান", "দুর্গা পুজোর গান"],
+    "url": "https://durgapujasongs.com/",
+    "description": "Free Durga Puja songs online: classic Bengali Pujo songs, Mahalaya, Agomoni and dhak, new Puja hits and Navratri garba songs.",
+    "keywords": "Durga Puja songs, Pujo songs, Mahalaya, Mahishasuramardini, Agomoni, Navratri songs, garba, dandiya, পুজোর গান, মহালয়া",
+    "inLanguage": ["en-IN", "bn"]
+  }
+  </script>
+</head>
+<body>
+  <main class="stage">
+    <div id="scenes" class="stage__scenes" aria-hidden="true"></div>
+    <div class="stage__shade"></div>
+
+    <header class="hero">
+      <h1 class="hero__title"><span lang="bn">পুজোর গান</span> <span class="hero__title-en">Pujo Songs</span></h1>
+      <p class="hero__sub">Mahalaya, Agomoni, Dhak &amp; Navratri</p>
+    </header>
+
+    <section id="card" class="card" aria-label="Music player">
+      <div class="card__head">
+        <button id="mahalayaBtn" class="mode-switch" aria-pressed="false" hidden>
+          <span class="mode-switch__track"><span class="mode-switch__knob"></span></span>
+          Mahalaya
+        </button>
+      </div>
+      <div id="tabs" class="tabs" role="group" aria-label="Choose playlist"></div>
+      <p id="mahalayaTitle" class="mode-title" hidden><span lang="bn">মহালয়া</span> · Mahalaya</p>
+
+      <div class="card__top">
+        <div id="cover" class="cover" aria-hidden="true"><span class="cover__hole"></span></div>
+        <div class="meta">
+          <p id="songTitle" class="meta__title">Tap play to start</p>
+          <p id="songStatus" class="meta__status" aria-live="polite">Loading songs…</p>
+        </div>
+        <button id="shareBtn" class="icon-btn icon-btn--share" title="Share this song" aria-label="Share this song" hidden>
+          <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+        </button>
+      </div>
+      <p id="toast" class="toast" role="status" aria-live="polite"></p>
+      <div id="sceneDots" class="scene-dots" role="group" aria-label="Choose scene" hidden></div>
+
+      <div class="progress">
+        <span id="timeNow" class="progress__time">0:00</span>
+        <input id="seek" class="range" type="range" min="0" max="100" step="0.1" value="0" aria-label="Seek">
+        <span id="timeEnd" class="progress__time">0:00</span>
+      </div>
+
+      <div class="controls">
+        <button id="shuffleBtn" class="icon-btn is-on" title="Shuffle: on" aria-label="Shuffle" aria-pressed="true">
+          <svg viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+        </button>
+        <button id="prevBtn" class="icon-btn" title="Previous" aria-label="Previous">
+          <svg viewBox="0 0 24 24"><path class="fill" d="M19 5v14L8 12z"/><path d="M5 5v14"/></svg>
+        </button>
+        <button id="playBtn" class="play-btn" title="Play" aria-label="Play" disabled>
+          <svg id="playIcon" viewBox="0 0 24 24"><path class="fill" d="M7 4v16l13-8z"/></svg>
+          <svg id="pauseIcon" viewBox="0 0 24 24" hidden><path class="fill" d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+        </button>
+        <button id="nextBtn" class="icon-btn" title="Next" aria-label="Next">
+          <svg viewBox="0 0 24 24"><path class="fill" d="M5 5v14l11-7z"/><path d="M19 5v14"/></svg>
+        </button>
+        <button id="repeatBtn" class="icon-btn is-on" title="Repeat: all" aria-label="Repeat: all">
+          <svg viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>
+          <span id="repeatOne" class="badge" hidden>1</span>
+        </button>
+      </div>
+
+      <div class="volume">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>
+        <input id="volume" class="range" type="range" min="0" max="100" step="1" value="100" aria-label="Volume">
+      </div>
+      <p id="gaNotice" class="ga-notice" hidden>This site uses Google Analytics to count visits.</p>
+    </section>
+
+    <div class="yt-box" aria-hidden="true">
+      <div id="ytPlayer"></div>
+    </div>
+  </main>
+
+  <script src="js/constants.js"></script>
+  <script src="js/credits.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/background.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
