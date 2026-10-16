@@ -19,6 +19,12 @@ const BACKGROUND_IMAGES = [
 
 const SITE_URL = "https://durgapujasongs.com";
 
+const PANDAL_GUIDE_URL = "https://durgapujapandal.com/";
+
+const SCENE_TAGS = [
+  { y: 0.5, text: "Go pandal hopping", icon: "pin", onScreen: true }
+];
+
 window.PUJO_CONFIG = {
   playlists: [
     {
@@ -49,5 +55,7 @@ window.PUJO_CONFIG = {
   backgroundImages: BACKGROUND_IMAGES,
   gaMeasurementId:  GA_MEASUREMENT_ID,
   instagramId:      INSTAGRAM_ID,
-  siteUrl:          SITE_URL
+  siteUrl:          SITE_URL,
+  pandalGuideUrl:   PANDAL_GUIDE_URL,
+  sceneTags:        SCENE_TAGS
 };

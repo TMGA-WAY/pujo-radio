@@ -26,6 +26,59 @@
     });
   }
 
+  const ICONS = {
+    pin: "M12 22s7-6.1 7-12a7 7 0 0 0-14 0c0 5.9 7 12 7 12zm0-9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"
+  };
+
+  const tags = images.flatMap((img, n) => {
+    const tag   = (config.sceneTags || [])[n % sources.length];
+    const scene = n % sources.length;
+
+    const main = Math.floor(n / sources.length) === 1;
+
+    if (!tag || !config.pandalGuideUrl || (tag.onScreen && !main)) {
+      return [];
+    }
+
+    const link  = document.createElement("a");
+    const icon  = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const path  = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const label = document.createElement("span");
+
+    link.className = `scene-tag scene-tag--${tag.icon}${tag.onScreen ? " scene-tag--screen" : ""}`;
+    link.href      = config.pandalGuideUrl;
+    link.target    = "_blank";
+    link.rel       = "noopener noreferrer";
+    if (!main) {
+      link.tabIndex = -1;
+      link.setAttribute("aria-hidden", "true");
+    }
+
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("aria-hidden", "true");
+    path.setAttribute("d", ICONS[tag.icon]);
+    icon.appendChild(path);
+    label.textContent = tag.text;
+    link.append(icon, label);
+    link.addEventListener("click", () => window.pujoTrack("pandal_click", { scene: scene + 1 }));
+
+    if (tag.onScreen) {
+      link.style.top = `${tag.y * 100}%`;
+      stage.appendChild(link);
+      return [];
+    }
+
+    strip.appendChild(link);
+    return [{ link, img, tag }];
+  });
+
+  function placeTags() {
+    tags.forEach(({ link, img, tag }) => {
+      link.style.left = `${img.offsetLeft + img.offsetWidth * tag.x}px`;
+      link.style.top  = `${tag.y * 100}%`;
+    });
+  }
+
   const dots = sources.map((_, i) => {
     const dot = document.createElement("button");
 
@@ -122,6 +175,7 @@
   }
 
   function refresh() {
+    placeTags();
     stage.classList.add("is-pannable");
     dotsBox.hidden = sources.length < 2;
     show(offset === null ? sceneOffset(0) : wrap(offset), false);
