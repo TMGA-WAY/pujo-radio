@@ -4,32 +4,55 @@
   const REPEAT_NEXT       = { all: "one", one: "off", off: "all" };
   const TITLE_MAX_LETTERS = 25;
   const FLIP_MS           = 300;
+  const MAX_RESULTS       = 50;
+  const TITLE_BATCH       = 8;
+  const CUSTOM_ON_TEXT    = "Custom playlist is activated";
 
   const el = id => document.getElementById(id);
 
   const ui = {
-    tabs:       el("tabs"),
-    cover:      el("cover"),
-    title:      el("songTitle"),
-    status:     el("songStatus"),
-    playBtn:    el("playBtn"),
-    playIcon:   el("playIcon"),
-    pauseIcon:  el("pauseIcon"),
-    prevBtn:    el("prevBtn"),
-    nextBtn:    el("nextBtn"),
-    shuffleBtn: el("shuffleBtn"),
-    repeatBtn:  el("repeatBtn"),
-    repeatOne:  el("repeatOne"),
-    seek:       el("seek"),
-    timeNow:    el("timeNow"),
-    timeEnd:    el("timeEnd"),
-    volume:     el("volume"),
-    shareBtn:   el("shareBtn"),
-    card:       el("card"),
-    modeBtn:    el("mahalayaBtn"),
-    modeTitle:  el("mahalayaTitle"),
-    toast:      el("toast"),
-    ytBox:      document.querySelector(".yt-box")
+    tabs:              el("tabs"),
+    cover:             el("cover"),
+    title:             el("songTitle"),
+    status:            el("songStatus"),
+    playBtn:           el("playBtn"),
+    playIcon:          el("playIcon"),
+    pauseIcon:         el("pauseIcon"),
+    prevBtn:           el("prevBtn"),
+    nextBtn:           el("nextBtn"),
+    shuffleBtn:        el("shuffleBtn"),
+    repeatBtn:         el("repeatBtn"),
+    repeatOne:         el("repeatOne"),
+    seek:              el("seek"),
+    timeNow:           el("timeNow"),
+    timeEnd:           el("timeEnd"),
+    volume:            el("volume"),
+    shareBtn:          el("shareBtn"),
+    card:              el("card"),
+    modeBtn:           el("mahalayaBtn"),
+    modeTitle:         el("mahalayaTitle"),
+    searchBtn:         el("searchBtn"),
+    searchPanel:       el("searchPanel"),
+    searchInput:       el("searchInput"),
+    searchClose:       el("searchClose"),
+    searchResults:     el("searchResults"),
+    searchEmpty:       el("searchEmpty"),
+    adjustBtn:         el("adjustBtn"),
+    adjustPanel:       el("adjustPanel"),
+    adjustTitle:       el("adjustTitle"),
+    adjustClose:       el("adjustClose"),
+    adjustList:        el("adjustList"),
+    adjustEmpty:       el("adjustEmpty"),
+    adjustReset:       el("adjustReset"),
+    adjustSave:        el("adjustSave"),
+    searchSuggest:     el("searchSuggest"),
+    searchSuggestLink: el("searchSuggestLink"),
+    suggestPanel:      el("suggestPanel"),
+    suggestClose:      el("suggestClose"),
+    suggestInput:      el("suggestInput"),
+    suggestSend:       el("suggestSend"),
+    toast:             el("toast"),
+    ytBox:             document.querySelector(".yt-box")
   };
 
   const state = {
@@ -53,7 +76,14 @@
     wantPlay:    false,
     toastTimer:  null,
     mahalaya:    false,
-    mainKey:     null
+    mainKey:     null,
+    found:       [],
+    foundActive: 0,
+    titles:      {},
+    titleLoads:  {},
+    titleDone:   {},
+    adjustDirty: false,
+    dragRow:     null
   };
 
   function loadSaved() {
@@ -113,7 +143,27 @@
     };
   }
 
+  function customOrder() {
+    const saved = (loadSaved().custom || {})[state.listKey];
+
+    if (!saved || !state.ids.length) {
+      return null;
+    }
+    const picked = [...new Set(saved.map(id => state.ids.indexOf(id)).filter(i => i >= 0))];
+    const rest   = state.ids.map((_, i) => i).filter(i => !picked.includes(i));
+
+    return [...picked, ...rest];
+  }
+
   function buildOrder(startIndex) {
+    const custom = customOrder();
+
+    if (custom) {
+      state.order = custom;
+      state.pos   = Math.max(0, custom.indexOf(startIndex));
+      return;
+    }
+
     const order = state.ids.map((_, i) => i);
 
     if (state.shuffle) {
@@ -167,7 +217,7 @@
       return;
     }
 
-    if (state.shuffle) {
+    if (state.shuffle && !customOrder()) {
       buildOrder(pickStart(currentIndex()));
     }
     playAt(0);
@@ -329,6 +379,8 @@
     }
 
     track("player_action", { action: `playlist_${key}` });
+    closeSearch();
+    closeAdjust();
     state.listKey     = key;
     state.errorStreak = 0;
     save({ playlist: key });
@@ -341,6 +393,8 @@
     if (ui.card.classList.contains("is-flip-out")) {
       return;
     }
+    closeSearch();
+    closeAdjust();
 
     const on = !state.mahalaya;
 
@@ -366,6 +420,318 @@
       ui.card.classList.replace("is-flip-out", "is-flip-in");
       setTimeout(() => ui.card.classList.remove("is-flip-in"), FLIP_MS);
     }, FLIP_MS);
+  }
+
+  function normalize(text) {
+    return text
+            .toLowerCase()
+            .normalize("NFKD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
+            .replace(/([bcdfgjklmnpqrstvwxz])h/g, "$1")
+            .replace(/([aeiou])\1+/g, "$1")
+            .trim();
+  }
+
+  function findSongs(query) {
+    const words   = normalize(query).split(" ").filter(Boolean);
+    const phrases = words.length < 2 ? words : words.slice(1).map((word, i) => `${words[i]} ${word}`);
+
+    return state.ids
+            .map((id, index) => {
+              const title = state.titles[id];
+
+              if (!title) {
+                return null;
+              }
+              const text  = ` ${normalize(title)} `;
+              const score = phrases.filter(phrase => text.includes(phrase)).length;
+
+              return phrases.length === 0 || score > 0 ? { index, title, score } : null;
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.score - a.score || a.index - b.index)
+            .slice(0, MAX_RESULTS);
+  }
+
+  function fetchTitle(id) {
+    if (!state.titleLoads[id]) {
+      const video = encodeURIComponent(`https://www.youtube.com/watch?v=${id}`);
+
+      state.titleLoads[id] = fetch(`https://www.youtube.com/oembed?format=json&url=${video}`)
+              .then(response => (response.ok ? response.json() : null))
+              .then(data => {
+                if (data && data.title) {
+                  state.titles[id] = data.title;
+                }
+              })
+              .catch(() => null)
+              .finally(() => {
+                state.titleDone[id] = true;
+              });
+    }
+    return state.titleLoads[id];
+  }
+
+  async function loadTitles(ids) {
+    for (let i = 0; i < ids.length; i += TITLE_BATCH) {
+      await Promise.all(ids.slice(i, i + TITLE_BATCH).map(fetchTitle));
+      if (!ui.searchPanel.hidden) {
+        renderResults(true);
+      }
+      if (!ui.adjustPanel.hidden && !state.adjustDirty) {
+        renderAdjust();
+      }
+    }
+  }
+
+  function renderResults(keepActive) {
+    const playing = state.started ? currentIndex() : -1;
+    const loading = !state.ids.length || state.ids.some(id => !state.titleDone[id]);
+
+    state.found       = state.ids.length ? findSongs(ui.searchInput.value) : [];
+    state.foundActive = keepActive === true ? Math.min(state.foundActive, Math.max(0, state.found.length - 1)) : 0;
+
+    ui.searchResults.replaceChildren(...state.found.map((song, i) => {
+      const item   = document.createElement("li");
+      const button = document.createElement("button");
+
+      button.className   = "search__result";
+      button.textContent = shortTitle(song.title);
+      button.title       = song.title;
+      button.setAttribute("role", "option");
+      button.classList.toggle("is-playing", song.index === playing);
+      button.addEventListener("click", () => playFound(i));
+      item.appendChild(button);
+      return item;
+    }));
+
+    ui.searchEmpty.textContent = loading ? "Loading songs…" : "No songs found";
+    ui.searchEmpty.hidden      = state.found.length > 0;
+    ui.searchSuggest.hidden    = state.found.length > 0 || loading || !ui.searchInput.value.trim();
+    markActiveResult();
+  }
+
+  function markActiveResult() {
+    [...ui.searchResults.querySelectorAll(".search__result")].forEach((button, i) => {
+      const active = i === state.foundActive;
+
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", active);
+      if (active) {
+        button.scrollIntoView({ block: "nearest" });
+      }
+    });
+  }
+
+  function playFound(i) {
+    const song = state.found[i];
+
+    if (!song || ui.playBtn.disabled) {
+      return;
+    }
+    track("search_play", {
+      search_term: ui.searchInput.value.trim().slice(0, 100),
+      video_id:    state.ids[song.index],
+      playlist:    state.listKey
+    });
+    closeSearch();
+    playAt(state.order.indexOf(song.index));
+  }
+
+  function openSearch() {
+    const list = findList(state.listKey);
+
+    closeAdjust();
+    closeSuggest();
+    ui.searchPanel.hidden          = false;
+    ui.searchInput.value           = "";
+    ui.searchInput.placeholder     = `Search ${list ? list.label : ""} songs`;
+    ui.searchBtn.setAttribute("aria-expanded", "true");
+    renderResults();
+    ui.searchInput.focus();
+  }
+
+  function closeSearch() {
+    if (ui.searchPanel.hidden) {
+      return;
+    }
+    ui.searchPanel.hidden = true;
+    ui.searchBtn.setAttribute("aria-expanded", "false");
+  }
+
+  function onSearchKey(e) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const step = e.key === "ArrowDown" ? 1 : -1;
+
+      state.foundActive = Math.min(state.found.length - 1, Math.max(0, state.foundActive + step));
+      markActiveResult();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      playFound(state.foundActive);
+    } else if (e.key === "Escape") {
+      closeSearch();
+      ui.searchBtn.focus();
+    }
+  }
+
+  function updateCustomUi() {
+    const custom = Boolean(customOrder());
+
+    ui.shuffleBtn.classList.toggle("is-disabled", custom);
+    ui.shuffleBtn.setAttribute("aria-disabled", custom);
+    ui.shuffleBtn.title = custom ? CUSTOM_ON_TEXT : `Shuffle: ${state.shuffle ? "on" : "off"}`;
+    if (custom) {
+      ui.shuffleBtn.dataset.tip = CUSTOM_ON_TEXT;
+    } else {
+      delete ui.shuffleBtn.dataset.tip;
+    }
+    ui.adjustBtn.classList.toggle("is-on", custom);
+  }
+
+  function adjustRow(id) {
+    const row  = document.createElement("li");
+    const grip = document.createElement("span");
+    const name = document.createElement("span");
+    const up   = document.createElement("button");
+    const down = document.createElement("button");
+
+    row.className   = "adjust__row";
+    row.dataset.id  = id;
+    grip.className  = "adjust__handle";
+    grip.innerHTML  = '<svg viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"/></svg>';
+    grip.addEventListener("pointerdown", e => startDrag(e, row));
+    name.className   = "adjust__name";
+    name.textContent = shortTitle(state.titles[id]);
+    name.title       = state.titles[id];
+
+    [[up, "Move up", "M6 15l6-6 6 6", -1], [down, "Move down", "M6 9l6 6 6-6", 1]].forEach(([button, label, path, step]) => {
+      button.className = "icon-btn adjust__move";
+      button.title     = label;
+      button.setAttribute("aria-label", `${label}: ${state.titles[id]}`);
+      button.innerHTML = `<svg viewBox="0 0 24 24"><path d="${path}"/></svg>`;
+      button.addEventListener("click", () => moveRow(row, step));
+    });
+
+    row.append(grip, name, up, down);
+    return row;
+  }
+
+  function renderAdjust() {
+    const custom  = customOrder();
+    const order   = custom || state.ids.map((_, i) => i);
+    const ids     = order.map(i => state.ids[i]).filter(id => state.titles[id]);
+    const loading = !state.ids.length || state.ids.some(id => !state.titleDone[id]);
+
+    ui.adjustList.replaceChildren(...ids.map(adjustRow));
+    ui.adjustEmpty.textContent = "Loading songs…";
+    ui.adjustEmpty.hidden      = ids.length > 0 && !loading;
+  }
+
+  function openAdjust() {
+    const list = findList(state.listKey);
+
+    closeSearch();
+    closeSuggest();
+    state.adjustDirty          = false;
+    ui.adjustPanel.hidden      = false;
+    ui.adjustTitle.textContent = `Adjust ${list ? list.label : ""} playlist`;
+    ui.adjustBtn.setAttribute("aria-expanded", "true");
+    renderAdjust();
+  }
+
+  function closeAdjust() {
+    if (ui.adjustPanel.hidden) {
+      return;
+    }
+    ui.adjustPanel.hidden = true;
+    ui.adjustBtn.setAttribute("aria-expanded", "false");
+  }
+
+  function moveRow(row, step) {
+    const target = step < 0 ? row.previousElementSibling : row.nextElementSibling;
+
+    if (!target) {
+      return;
+    }
+    state.adjustDirty = true;
+    if (step < 0) {
+      target.before(row);
+    } else {
+      target.after(row);
+    }
+    row.querySelector(step < 0 ? ".adjust__move" : ".adjust__move:last-of-type").focus();
+  }
+
+  function startDrag(e, row) {
+    e.preventDefault();
+    state.dragRow     = row;
+    state.adjustDirty = true;
+    row.classList.add("is-dragging");
+    e.target.setPointerCapture(e.pointerId);
+  }
+
+  function onDragMove(e) {
+    const row = state.dragRow;
+
+    if (!row) {
+      return;
+    }
+    const box  = ui.adjustList.getBoundingClientRect();
+    const rows = [...ui.adjustList.children].filter(item => item !== row);
+    const next = rows.find(item => {
+      const r = item.getBoundingClientRect();
+      return e.clientY < r.top + r.height / 2;
+    });
+
+    if (next) {
+      next.before(row);
+    } else {
+      ui.adjustList.appendChild(row);
+    }
+    if (e.clientY < box.top + 30) {
+      ui.adjustList.scrollTop -= 8;
+    } else if (e.clientY > box.bottom - 30) {
+      ui.adjustList.scrollTop += 8;
+    }
+  }
+
+  function endDrag() {
+    if (state.dragRow) {
+      state.dragRow.classList.remove("is-dragging");
+      state.dragRow = null;
+    }
+  }
+
+  function applyOrder(message, action, restart) {
+    const playing = state.started && !restart ? currentIndex() : null;
+
+    buildOrder(playing ?? (customOrder() ? customOrder()[0] : pickStart()));
+    updateCustomUi();
+    closeAdjust();
+    showToast(message);
+    track("player_action", { action });
+
+    if (restart && state.started) {
+      playAt(0);
+    }
+  }
+
+  function saveAdjust() {
+    const shown  = [...ui.adjustList.children].map(row => row.dataset.id);
+    const hidden = state.ids.filter(id => !shown.includes(id));
+
+    save({ custom: { ...loadSaved().custom, [state.listKey]: [...shown, ...hidden] } });
+    applyOrder("Custom playlist saved", "custom_save", true);
+  }
+
+  function resetAdjust() {
+    const custom = { ...loadSaved().custom };
+
+    delete custom[state.listKey];
+    save({ custom });
+    applyOrder("Original order restored", "custom_reset");
   }
 
   function shareText(videoId) {
@@ -403,6 +769,59 @@
     } else {
       showToast("Could not copy the link");
     }
+  }
+
+  function copyNow(text) {
+    const box = document.createElement("textarea");
+
+    box.value = text;
+    box.setAttribute("readonly", "");
+    box.style.position = "fixed";
+    box.style.opacity  = "0";
+    document.body.appendChild(box);
+    box.select();
+    box.setSelectionRange(0, text.length);
+
+    let copied = false;
+
+    try {
+      copied = document.execCommand("copy");
+    } catch (e) {
+      copied = false;
+    }
+    box.remove();
+
+    if (!copied && navigator.clipboard) {
+      navigator.clipboard.writeText(text).catch(() => null);
+    }
+  }
+
+  function openSuggest(text) {
+    closeSearch();
+    closeAdjust();
+    ui.suggestPanel.hidden = false;
+    ui.suggestInput.value  = text || "";
+    ui.suggestInput.focus();
+  }
+
+  function closeSuggest() {
+    ui.suggestPanel.hidden = true;
+  }
+
+  function sendSuggest() {
+    const text = ui.suggestInput.value.trim();
+
+    if (!text) {
+      ui.suggestInput.focus();
+      showToast("Type a song name first");
+      return;
+    }
+
+    copyNow(`Song suggestion for ${config.siteUrl.replace(/^https?:\/\//, "")}: ${text}`);
+    window.open(`https://ig.me/m/${config.instagramId.replace(/^@/, "")}`, "_blank", "noopener");
+    track("player_action", { action: "suggest_send" });
+    closeSuggest();
+    showToast("Copied! Just paste it in the chat");
   }
 
   async function copyText(text) {
@@ -503,12 +922,15 @@
     }
 
     state.ids = state.lists[key];
+    loadTitles(state.ids);
 
     const hasTop     = findList(key).topCount > 0;
     const savedIndex = state.ids.indexOf((loadSaved().songs || {})[key]);
-    const startIndex = !hasTop && savedIndex >= 0 ? savedIndex : pickStart();
+    const custom     = customOrder();
+    const startIndex = custom ? custom[0] : !hasTop && savedIndex >= 0 ? savedIndex : pickStart();
 
     buildOrder(startIndex);
+    updateCustomUi();
     ui.playBtn.disabled = false;
 
     if (autoplay) {
@@ -545,12 +967,51 @@
   renderTabs();
   ui.modeBtn.hidden = !config.mahalaya?.playlistId;
   ui.modeBtn.addEventListener("click", toggleMahalaya);
+  ui.searchBtn.addEventListener("click", () => (ui.searchPanel.hidden ? openSearch() : closeSearch()));
+  ui.searchClose.addEventListener("click", closeSearch);
+  ui.searchInput.addEventListener("input", renderResults);
+  ui.searchInput.addEventListener("keydown", onSearchKey);
+  document.addEventListener("pointerdown", e => {
+    if (!ui.searchPanel.hidden && !e.target.closest("#searchPanel, #searchBtn")) {
+      closeSearch();
+    }
+    if (!ui.adjustPanel.hidden && !e.target.closest("#adjustPanel, #adjustBtn")) {
+      closeAdjust();
+    }
+    if (!ui.suggestPanel.hidden && !e.target.closest("#suggestPanel, #searchSuggest, #searchSuggestLink")) {
+      closeSuggest();
+    }
+  });
+
+  ui.adjustBtn.addEventListener("click", () => (ui.adjustPanel.hidden ? openAdjust() : closeAdjust()));
+  ui.searchSuggest.addEventListener("click", () => openSuggest(ui.searchInput.value.trim()));
+  ui.searchSuggestLink.addEventListener("click", () => openSuggest(ui.searchInput.value.trim()));
+  ui.suggestClose.addEventListener("click", closeSuggest);
+  ui.suggestSend.addEventListener("click", sendSuggest);
+  ui.suggestInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendSuggest();
+    } else if (e.key === "Escape") {
+      closeSuggest();
+    }
+  });
+  ui.adjustClose.addEventListener("click", closeAdjust);
+  ui.adjustSave.addEventListener("click", saveAdjust);
+  ui.adjustReset.addEventListener("click", resetAdjust);
+  ui.adjustList.addEventListener("pointermove", onDragMove);
+  ui.adjustList.addEventListener("pointerup", endDrag);
+  ui.adjustList.addEventListener("pointercancel", endDrag);
   ui.playBtn.addEventListener("click", togglePlay);
   ui.nextBtn.addEventListener("click", goNext);
   ui.prevBtn.addEventListener("click", goPrev);
   ui.shareBtn.addEventListener("click", shareSong);
 
   ui.shuffleBtn.addEventListener("click", () => {
+    if (customOrder()) {
+      showToast(CUSTOM_ON_TEXT);
+      return;
+    }
     state.shuffle = !state.shuffle;
     if (state.ids.length) {
       buildOrder(currentIndex());
