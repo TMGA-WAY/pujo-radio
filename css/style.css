@@ -322,32 +322,6 @@ button { font: inherit; color: inherit; }
   color: var(--accent-ink);
 }
 
-.search__suggest {
-  display: block;
-  margin: 8px auto 0;
-  padding: 6px 12px;
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--accent);
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.search__suggest--foot {
-  margin-top: 6px;
-  padding: 2px 8px;
-  border: 0;
-  color: var(--ink-soft);
-  font-weight: 500;
-  text-decoration: underline;
-}
-
-.suggest__bar { margin-top: 10px; padding-left: 14px; }
-.suggest__note { margin-top: 8px; text-align: center; }
-
 .search__empty {
   margin-top: 16px;
   text-align: center;

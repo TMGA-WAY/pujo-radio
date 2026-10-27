@@ -77,8 +77,6 @@
         </div>
         <ul id="searchResults" class="search__results" role="listbox" aria-label="Search results"></ul>
         <p id="searchEmpty" class="search__empty" hidden>No songs found</p>
-        <button id="searchSuggest" class="search__suggest" hidden>Can't find it? Suggest it on Instagram</button>
-        <button id="searchSuggestLink" class="search__suggest search__suggest--foot">Suggest a song</button>
       </div>
       <div id="adjustPanel" class="search adjust" hidden>
         <div class="adjust__head">
@@ -94,22 +92,6 @@
           <button id="adjustReset" class="adjust__btn">Reset</button>
           <button id="adjustSave" class="adjust__btn adjust__btn--main">Save my order</button>
         </div>
-      </div>
-      <div id="suggestPanel" class="search adjust" hidden>
-        <div class="adjust__head">
-          <p class="adjust__title">Suggest a song</p>
-          <button id="suggestClose" class="icon-btn icon-btn--small" title="Close" aria-label="Close">
-            <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
-          </button>
-        </div>
-        <p class="adjust__hint">Send a song name or YouTube link. The best ones get added for everyone.</p>
-        <div class="search__bar suggest__bar">
-          <input id="suggestInput" class="search__input" type="text" maxlength="200" autocomplete="off" enterkeyhint="send" placeholder="e.g. Aar Koto Raat Eka Thakbo" aria-label="Song to suggest">
-        </div>
-        <div class="adjust__actions">
-          <button id="suggestSend" class="adjust__btn adjust__btn--main">Send on Instagram</button>
-        </div>
-        <p class="adjust__hint suggest__note">Your text is copied for you. Just paste it in the Instagram chat.</p>
       </div>
       <p id="mahalayaTitle" class="mode-title" hidden><span lang="bn">মহালয়া</span> · Mahalaya</p>
 
@@ -165,7 +147,6 @@
   </main>
 
   <script src="js/constants.js"></script>
-  <script src="js/credits.js"></script>
   <script src="js/analytics.js"></script>
   <script src="js/player.js"></script>
   <script src="js/background.js"></script>

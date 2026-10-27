@@ -45,12 +45,6 @@
     adjustEmpty:       el("adjustEmpty"),
     adjustReset:       el("adjustReset"),
     adjustSave:        el("adjustSave"),
-    searchSuggest:     el("searchSuggest"),
-    searchSuggestLink: el("searchSuggestLink"),
-    suggestPanel:      el("suggestPanel"),
-    suggestClose:      el("suggestClose"),
-    suggestInput:      el("suggestInput"),
-    suggestSend:       el("suggestSend"),
     toast:             el("toast"),
     ytBox:             document.querySelector(".yt-box")
   };
@@ -508,7 +502,6 @@
 
     ui.searchEmpty.textContent = loading ? "Loading songs…" : "No songs found";
     ui.searchEmpty.hidden      = state.found.length > 0;
-    ui.searchSuggest.hidden    = state.found.length > 0 || loading || !ui.searchInput.value.trim();
     markActiveResult();
   }
 
@@ -543,7 +536,6 @@
     const list = findList(state.listKey);
 
     closeAdjust();
-    closeSuggest();
     ui.searchPanel.hidden          = false;
     ui.searchInput.value           = "";
     ui.searchInput.placeholder     = `Search ${list ? list.label : ""} songs`;
@@ -633,7 +625,6 @@
     const list = findList(state.listKey);
 
     closeSearch();
-    closeSuggest();
     state.adjustDirty          = false;
     ui.adjustPanel.hidden      = false;
     ui.adjustTitle.textContent = `Adjust ${list ? list.label : ""} playlist`;
@@ -769,59 +760,6 @@
     } else {
       showToast("Could not copy the link");
     }
-  }
-
-  function copyNow(text) {
-    const box = document.createElement("textarea");
-
-    box.value = text;
-    box.setAttribute("readonly", "");
-    box.style.position = "fixed";
-    box.style.opacity  = "0";
-    document.body.appendChild(box);
-    box.select();
-    box.setSelectionRange(0, text.length);
-
-    let copied = false;
-
-    try {
-      copied = document.execCommand("copy");
-    } catch (e) {
-      copied = false;
-    }
-    box.remove();
-
-    if (!copied && navigator.clipboard) {
-      navigator.clipboard.writeText(text).catch(() => null);
-    }
-  }
-
-  function openSuggest(text) {
-    closeSearch();
-    closeAdjust();
-    ui.suggestPanel.hidden = false;
-    ui.suggestInput.value  = text || "";
-    ui.suggestInput.focus();
-  }
-
-  function closeSuggest() {
-    ui.suggestPanel.hidden = true;
-  }
-
-  function sendSuggest() {
-    const text = ui.suggestInput.value.trim();
-
-    if (!text) {
-      ui.suggestInput.focus();
-      showToast("Type a song name first");
-      return;
-    }
-
-    copyNow(`Song suggestion for ${config.siteUrl.replace(/^https?:\/\//, "")}: ${text}`);
-    window.open(`https://ig.me/m/${config.instagramId.replace(/^@/, "")}`, "_blank", "noopener");
-    track("player_action", { action: "suggest_send" });
-    closeSuggest();
-    showToast("Copied! Just paste it in the chat");
   }
 
   async function copyText(text) {
@@ -978,24 +916,9 @@
     if (!ui.adjustPanel.hidden && !e.target.closest("#adjustPanel, #adjustBtn")) {
       closeAdjust();
     }
-    if (!ui.suggestPanel.hidden && !e.target.closest("#suggestPanel, #searchSuggest, #searchSuggestLink")) {
-      closeSuggest();
-    }
   });
 
   ui.adjustBtn.addEventListener("click", () => (ui.adjustPanel.hidden ? openAdjust() : closeAdjust()));
-  ui.searchSuggest.addEventListener("click", () => openSuggest(ui.searchInput.value.trim()));
-  ui.searchSuggestLink.addEventListener("click", () => openSuggest(ui.searchInput.value.trim()));
-  ui.suggestClose.addEventListener("click", closeSuggest);
-  ui.suggestSend.addEventListener("click", sendSuggest);
-  ui.suggestInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      sendSuggest();
-    } else if (e.key === "Escape") {
-      closeSuggest();
-    }
-  });
   ui.adjustClose.addEventListener("click", closeAdjust);
   ui.adjustSave.addEventListener("click", saveAdjust);
   ui.adjustReset.addEventListener("click", resetAdjust);

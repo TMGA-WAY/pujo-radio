@@ -10,8 +10,6 @@ const MAHALAYA_TOP_COUNT = 0;
 
 const GA_MEASUREMENT_ID = "G-LBT9CHRNJQ";
 
-const INSTAGRAM_ID = "afterthecommit";
-
 const BACKGROUND_IMAGES = [
   "assets/durgapujo.webp",
   "assets/durgapujo-back-2.webp"
@@ -54,7 +52,6 @@ window.PUJO_CONFIG = {
   },
   backgroundImages: BACKGROUND_IMAGES,
   gaMeasurementId:  GA_MEASUREMENT_ID,
-  instagramId:      INSTAGRAM_ID,
   siteUrl:          SITE_URL,
   pandalGuideUrl:   PANDAL_GUIDE_URL,
   sceneTags:        SCENE_TAGS
