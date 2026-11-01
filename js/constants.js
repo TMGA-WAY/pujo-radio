@@ -1,11 +1,11 @@
+const KALIPUJO_PLAYLIST_ID = "PLV5erBsOVWwA";
 const CLASSIC_PLAYLIST_ID  = "PLGlwblcnENoE";
 const GENZ_PLAYLIST_ID     = "PLIBwgxsH13jE";
-const NAVRATRI_PLAYLIST_ID = "PLV5erBsOVWwA";
 const MAHALAYA_PLAYLIST_ID = "PLRglbAmOZpTo";
 
+const KALIPUJO_TOP_COUNT = 0;
 const CLASSIC_TOP_COUNT  = 10;
 const GENZ_TOP_COUNT     = 0;
-const NAVRATRI_TOP_COUNT = 0;
 const MAHALAYA_TOP_COUNT = 0;
 
 const GA_MEASUREMENT_ID = "G-LBT9CHRNJQ";
@@ -17,7 +17,8 @@ const BACKGROUND_IMAGES = [
 
 const SITE_URL = "https://durgapujasongs.com";
 
-const PANDAL_GUIDE_URL = "https://durgapujapandal.com/";
+const SHOW_PANDAL_GUIDE = false;
+const PANDAL_GUIDE_URL  = "https://durgapujapandal.com/";
 
 const SCENE_TAGS = [
   { y: 0.5, text: "Go pandal hopping", icon: "pin", onScreen: true }
@@ -25,6 +26,12 @@ const SCENE_TAGS = [
 
 window.PUJO_CONFIG = {
   playlists: [
+    {
+      key:        "kalipujo",
+      label:      "Kalipujo Song",
+      playlistId: KALIPUJO_PLAYLIST_ID,
+      topCount:   KALIPUJO_TOP_COUNT
+    },
     {
       key:        "classic",
       label:      "Classic",
@@ -36,12 +43,6 @@ window.PUJO_CONFIG = {
       label:      "Gen-Z Special",
       playlistId: GENZ_PLAYLIST_ID,
       topCount:   GENZ_TOP_COUNT
-    },
-    {
-      key:        "navratri",
-      label:      "Navratri Special",
-      playlistId: NAVRATRI_PLAYLIST_ID,
-      topCount:   NAVRATRI_TOP_COUNT
     }
   ],
   mahalaya: {
@@ -53,6 +54,6 @@ window.PUJO_CONFIG = {
   backgroundImages: BACKGROUND_IMAGES,
   gaMeasurementId:  GA_MEASUREMENT_ID,
   siteUrl:          SITE_URL,
-  pandalGuideUrl:   PANDAL_GUIDE_URL,
+  pandalGuideUrl:   SHOW_PANDAL_GUIDE ? PANDAL_GUIDE_URL : "",
   sceneTags:        SCENE_TAGS
 };
